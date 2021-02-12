@@ -9,12 +9,14 @@ import os
 # Create your models here.
 
 
-def recipe_image_file_path(instance, filename):
+def recipe_upload_file_path(instance, filename):
     """Generate file path for new recipe image."""
     ext = filename.split('.')[-1]
     filename = f'{uuid.uuid4()}.{ext}'
-
-    return os.path.join('uploads/recipe/', filename)
+    if ext == "jpeg" or ext == "jpg" or ext == "png":
+        return os.path.join('uploads/recipe/images', filename)
+    else:
+        return os.path.join('uploads/recipe/videos', filename)
 
 
 class UserManager(BaseUserManager):
@@ -43,6 +45,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     """Custom user model that supports using email instead of username."""
     email = models.EmailField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
+    login = models.CharField(max_length=255, unique=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
@@ -88,7 +91,8 @@ class Recipe(models.Model):
     link = models.CharField(max_length=255, blank=True)
     ingredients = models.ManyToManyField('Ingredient')
     tags = models.ManyToManyField('Tag')
-    image = models.ImageField(null=True, upload_to=recipe_image_file_path)
+    image = models.ImageField(null=True, upload_to=recipe_upload_file_path)
+    video = models.FileField(null=True, upload_to=recipe_upload_file_path)
 
     def __str__(self):
         return self.title

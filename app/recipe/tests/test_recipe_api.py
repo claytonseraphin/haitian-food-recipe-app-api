@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -19,6 +20,11 @@ RECIPE_URLS = reverse('recipe:recipe-list')
 def image_upload_url(recipe_id):
     """Return URL for recipe image upload"""
     return reverse('recipe:recipe-upload-image', args=[recipe_id])
+
+
+def video_upload_url(recipe_id):
+    """Return URL for recipe video upload."""
+    return reverse('recipe:recipe-upload-video', args=[recipe_id])
 
 
 def detail_url(recipe_id):
@@ -246,3 +252,29 @@ class RecipeImageUploadTests(TestCase):
             url, {'image': 'notimage'}, format='multipart')
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class RecipeVideoUploadTests(TestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user('user', 'testpass')
+        self.client.force_authenticate(self.user)
+        self.recipe = sample_recipe(user=self.user)
+
+    def tearDown(self):
+        self.recipe.video.delete()
+
+    def test_upload_video_to_recipe(self):
+        """Test uploading a video to recipe."""
+        url = video_upload_url(self.recipe.id)
+
+        # with open('video1.mp4', 'rb') as video_file:
+        video = SimpleUploadedFile(
+            'video1.mp4', b"file_content", content_type="video/mp4")
+        res = self.client.post(url, {'video': video}, format='multipart')
+
+        self.recipe.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('video', res.data)
+        self.assertTrue(os.path.exists(self.recipe.video.path))
