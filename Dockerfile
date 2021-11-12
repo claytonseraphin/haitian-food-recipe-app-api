@@ -1,4 +1,4 @@
-FROM python:3.7-alpine
+FROM python:3.11.0a2-alpine
 LABEL maintainer='Clayton Seraphin ltd'
 
 ENV PYTHONUNBUFFERED 1
